@@ -1,0 +1,12 @@
+# prompt files
+fleet-dataset.xlsx
+START-HERE.txt
+task-brief.pdf
+
+data/
+
+# Python/Jupyter/OS cache
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db

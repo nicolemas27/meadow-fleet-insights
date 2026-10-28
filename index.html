@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Meadow Distribution | Fleet Insights</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<style>
+  :root {
+    --bg:#f3f6f4; --card:#ffffff; --ink:#1d2a33; --muted:#667581;
+    --line:#e1e8e4; --accent:#356d58; --accent-dark:#244d3d;
+    --warn:#fff8eb; --warnline:#ecd7a8; --shadow:0 8px 24px rgba(24,48,38,.06);
+    --attention-1:#c2410c; --attention-2:#991b1b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       color:var(--ink);background:var(--bg)}
+  header{background:linear-gradient(120deg,#17382e,#285744);color:#fff;padding:22px 28px;
+         border-bottom:4px solid #c9ae72;box-shadow:0 4px 16px rgba(20,42,33,.12)}
+  header h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.02em}
+  header p{margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.78)}
+  main{max-width:1240px;margin:0 auto;padding:24px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
+        border-radius:14px;padding:18px;flex:1 1 260px}
+  .card h2{margin:0 0 10px;font-size:12px;text-transform:uppercase;
+           letter-spacing:.07em;color:var(--muted);font-weight:700}
+  .kpi{font-size:25px;font-weight:700;color:var(--accent-dark);font-variant-numeric:tabular-nums}
+  .kpi small{font-size:11px;color:var(--muted);font-weight:400;display:block;
+             margin-top:4px;text-transform:none;letter-spacing:0}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+           gap:14px;background:var(--card);border:1px solid var(--line);
+           border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .filters label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;
+                 font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .filters select{width:100%;min-height:36px;border:1px solid var(--line);
+                  border-radius:8px;padding:6px 9px;color:var(--ink);
+                  background:#fff;font:inherit}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;
+        border:1px solid var(--line);border-radius:999px;font-size:12px;
+        cursor:pointer;background:#fff;color:var(--ink);user-select:none;transition:.15s ease}
+  .chip:hover{border-color:var(--accent);background:#f3f8f5}
+  .chip[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .route-note{font-size:11px;color:var(--muted);margin-top:7px}
+
+  /* Summary — Power BI KPI card style */
+  .exec{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:20px 22px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .exec-head{display:flex;justify-content:space-between;align-items:baseline;
+             margin-bottom:16px;flex-wrap:wrap;gap:8px}
+  .exec-head h2{margin:0;font-size:15px;font-weight:700;color:var(--ink);
+                text-transform:none;letter-spacing:0}
+  .exec-meta{font-size:11px;color:var(--muted)}
+  .exec-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+             gap:14px;margin-bottom:16px}
+
+  .kpi-card{background:#fff;border:1px solid var(--line);border-radius:10px;
+            padding:14px 16px;position:relative;overflow:hidden}
+  .kpi-card.attention-1{border-left:4px solid var(--attention-1)}
+  .kpi-card.attention-2{border-left:4px solid var(--attention-2)}
+  .kpi-card.context{border-left:4px solid #c9cfd8}
+
+  .kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+             color:var(--muted);font-weight:700;margin-bottom:6px}
+  .kpi-value{font-size:30px;font-weight:700;color:var(--ink);line-height:1.1;
+             font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .kpi-value .kpi-unit{font-size:18px;color:var(--muted);font-weight:600;margin-left:2px}
+  .kpi-value .kpi-normal{font-size:24px;color:var(--muted);font-weight:600}
+  .kpi-delta{font-size:12px;color:var(--muted);margin-top:6px;
+             display:flex;align-items:center;gap:5px;line-height:1.4}
+  .arrow{font-size:10px}
+  .arrow.up{color:var(--attention-2)}
+  .kpi-card.attention-1 .arrow.up{color:var(--attention-1)}
+  .kpi-spark{height:52px;margin-top:10px;position:relative}
+  .kpi-spark canvas{max-height:100% !important}
+  .kpi-spark-empty{display:flex;align-items:center}
+  .kpi-spark-empty svg{width:100%;height:52px}
+
+  .exec-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+                padding-top:14px;border-top:1px solid var(--line);
+                font-size:12px;color:var(--ink)}
+  .exec-actions-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+                      color:var(--muted);font-weight:700;
+                      background:#f0f2ee;padding:3px 8px;border-radius:999px}
+  .exec-actions-sep{color:var(--muted)}
+
+  nav.tabs{display:flex;gap:5px;background:#e9efeb;border:1px solid var(--line);
+           border-radius:12px;padding:5px;margin:20px 0 16px;flex-wrap:wrap}
+  nav.tabs button{background:transparent;border:0;border-radius:8px;padding:9px 12px;
+                  font:inherit;font-size:12px;color:var(--muted);cursor:pointer;transition:.15s ease}
+  nav.tabs button:hover{color:var(--accent-dark);background:rgba(255,255,255,.65)}
+  nav.tabs button[aria-selected="true"]{color:var(--accent-dark);background:#fff;
+                                       box-shadow:0 2px 7px rgba(24,48,38,.09);font-weight:700}
+  .panel{display:none}.panel.active{display:block}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);background:#f6f9f7;font-weight:700;font-size:10px;
+     text-transform:uppercase;letter-spacing:.06em}
+  tbody tr:hover{background:#f7faf8}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .caption{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.55}
+  .caption.warn{background:var(--warn);border:1px solid var(--warnline);
+                border-radius:10px;padding:12px 14px}
+  .empty{font-size:13px;color:var(--muted);padding:18px;text-align:center;
+         background:#fff;border:1px dashed var(--line);border-radius:10px}
+  .hint{font-size:12px;color:var(--muted);background:var(--warn);
+        border:1px solid var(--warnline);border-radius:10px;padding:12px 14px;margin-bottom:16px}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #9bc2aa;outline-offset:2px}
+  .chart-wrap{position:relative;width:100%;height:340px}
+  @media(max-width:640px){
+    header{padding:18px 16px}
+    main{padding:14px}
+    .filters{grid-template-columns:1fr;padding:14px}
+    nav.tabs button{flex:1 1 45%;padding:9px 7px;font-size:11px}
+    .card{padding:14px}
+    .exec{padding:16px}
+    .kpi-value{font-size:26px}
+    .chart-wrap{height:280px}
+    th,td{padding:7px}
+  }
+</style>
+</head>
+<body>
+<header>
+<h1>Meadow Distribution | Fleet Insights</h1>
+  <p>Synthetic data · 5–16 October 2026 · All times UTC · Detector events are signals, not fault findings</p>
+</header>
+<main>
+  <div id="loading" class="hint">Loading data...</div>
+  <div id="app" hidden>
+
+    <!-- ============ SUMMARY ============ -->
+    <section class="exec">
+      <div class="exec-head">
+        <h2>Summary</h2>
+        <span class="exec-meta">Full period · 5–16 Oct 2026 · 8 diesel vehicles</span>
+      </div>
+
+      <div class="exec-kpis">
+        <article class="kpi-card attention-1">
+          <div class="kpi-label">VEH03 · idle share</div>
+          <div class="kpi-value"><span id="kpiV3Value">—</span><span class="kpi-unit">%</span></div>
+          <div class="kpi-delta">
+            <span class="arrow up">▲</span>
+            <span id="kpiV3Delta">up from week 1</span>
+          </div>
+          <div class="kpi-spark"><canvas id="sparkV3"></canvas></div>
+        </article>
+
+        <article class="kpi-card attention-2">
+          <div class="kpi-label">VEH06 · fuel vs benchmark</div>
+          <div class="kpi-value"><span id="kpiV6Value">—</span><span class="kpi-unit">%</span></div>
+          <div class="kpi-delta">
+            <span class="arrow up">▲</span>
+            <span id="kpiV6Delta">vs peer VEH05</span>
+          </div>
+          <div class="kpi-spark"><canvas id="sparkV6"></canvas></div>
+        </article>
+
+        <article class="kpi-card context">
+          <div class="kpi-label">Other 6 vehicles</div>
+          <div class="kpi-value"><span class="kpi-normal">Normal</span></div>
+          <div class="kpi-delta">within a few % of class peer</div>
+          <div class="kpi-spark kpi-spark-empty">
+            <svg viewBox="0 0 200 50" preserveAspectRatio="none">
+              <line x1="0" y1="25" x2="200" y2="25" stroke="#c9cfd8"
+                    stroke-width="1" stroke-dasharray="3 3"/>
+            </svg>
+          </div>
+        </article>
+      </div>
+
+      <div class="exec-actions">
+        <span class="exec-actions-label">Next</span>
+        <span><strong>VEH03</strong> ask fleet team what changed on 12 Oct</span>
+        <span class="exec-actions-sep">·</span>
+        <span><strong>VEH06</strong> mechanical check before next service</span>
+      </div>
+    </section>
+
+    <!-- ============ FILTERS ============ -->
+    <section class="filters">
+      <div>
+        <label>Date range</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="dateFrom"></select>
+          <span style="color:var(--muted)">→</span>
+          <select id="dateTo"></select>
+        </div>
+        <div class="caption" id="dateLabel">—</div>
+      </div>
+      <div>
+        <label>Route type</label>
+        <div class="chips" id="routeChips"></div>
+        <div class="route-note">Each vehicle runs one route type in this dataset, so route and vehicle filters overlap.</div>
+      </div>
+      <div>
+        <label>Vehicle class</label>
+        <div class="chips" id="classChips"></div>
+      </div>
+      <div>
+        <label>Vehicle</label>
+        <div class="chips" id="vehicleChips"></div>
+      </div>
+    </section>
+
+    <section class="row" id="kpis"></section>
+
+    <!-- ============ TABS ============ -->
+    <nav class="tabs" id="tabs">
+      <button data-tab="veh03"    aria-selected="true">VEH03 idle</button>
+      <button data-tab="veh06"    aria-selected="false">VEH06 fuel</button>
+      <button data-tab="overview" aria-selected="false">Overview</button>
+      <button data-tab="events"   aria-selected="false">Driving events</button>
+      <button data-tab="weekly"   aria-selected="false">Weekly comparison</button>
+      <button data-tab="dq"       aria-selected="false">Data quality</button>
+    </nav>
+
+    <!-- ============ PANEL: VEH03 ============ -->
+    <div class="panel active" id="panel-veh03">
+      <div id="v3Body">
+        <div class="row">
+          <div class="card" style="flex:1 1 320px">
+            <h2>Idle share by date</h2>
+            <div id="v3Chart"></div>
+            <p class="caption">Idle share sits at ~13% until 9 October, then jumps to ~40% and doesn't come back down within the period.</p>
+          </div>
+          <div class="card" style="flex:1 1 320px">
+            <h2>By week</h2>
+            <table id="v3Week"></table>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h2>Week 2 context</h2>
+          <p class="caption" id="v3DriversCaption"></p>
+        </div>
+      </div>
+      <div id="v3Empty" class="empty" hidden>VEH03 is filtered out. Re-enable it in the sidebar to view.</div>
+    </div>
+
+    <!-- ============ PANEL: VEH06 ============ -->
+    <div class="panel" id="panel-veh06">
+      <div id="v6Body">
+        <div class="card">
+          <h2>VEH06 daily fuel vs benchmark</h2>
+          <div id="v6Chart"></div>
+          <p class="caption">VEH06 has been above its class benchmark every day of the period. This is a steady gap, not a change.</p>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h2>VEH05 vs VEH06 by load band</h2>
+          <table id="v6Loadband"></table>
+          <p class="caption" id="v6LoadbandCaption"></p>
+        </div>
+      </div>
+      <div id="v6Empty" class="empty" hidden>VEH06 is filtered out. Re-enable it in the sidebar to view.</div>
+    </div>
+
+    <!-- ============ PANEL: OVERVIEW ============ -->
+    <div class="panel" id="panel-overview">
+      <div class="row">
+        <div class="card" style="flex:1 1 100%">
+          <h2>Idle share by date</h2>
+          <div id="chartIdle"></div>
+          <p class="caption">When VEH03 (orange) is included, it is the only vehicle whose idle share moved during the period. The other seven lines are flat context. Click a vehicle in the legend to show or hide it.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card" style="flex:1 1 100%">
+          <h2>Fuel use vs class benchmark</h2>
+          <div id="chartBench"></div>
+          <p class="caption">VEH06 (dark red) sits ~26% above its illustrative class benchmark. Every other vehicle is within a few percent of its peer. Benchmarks are illustrative, not targets.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PANEL: EVENTS ============ -->
+    <div class="panel" id="panel-events">
+      <div class="row">
+        <div class="card" style="flex:1 1 100%">
+          <h2>Events per 100 km by vehicle</h2>
+          <table id="evVehicleTable"></table>
+          <p class="caption">Only events linked consistently to a trip and vehicle are counted. The figures use the full period.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="card" style="flex:1 1 100%">
+          <h2>Events per 100 km by route type</h2>
+          <table id="evRouteTable"></table>
+          <p class="caption">Urban routes see about four times the events per 100 km of motorway routes. In this dataset each vehicle runs only one route type, so vehicle and route rates can't be separated — the route differences mostly reflect where each vehicle is used, not how it's driven.</p>
+        </div>
+      </div>
+      <div class="card caption warn" style="margin-top:0">
+        <strong>Signals, not fault findings.</strong> Detector events are investigation prompts. They do not establish driver fault or unsafe driving. Route, load, weather and time of day are not controlled here. Do not use these figures to make employment decisions about drivers.
+      </div>
+    </div>
+
+    <!-- ============ PANEL: WEEKLY ============ -->
+    <div class="panel" id="panel-weekly">
+      <div class="card">
+        <h2>Week 1 vs Week 2 by vehicle</h2>
+        <table id="weeklyTable"></table>
+        <p class="caption">Week 1 covers 5–9 October; week 2 covers 12–16 October. The comparison uses the full period regardless of the date dropdowns. It does respond to the vehicle, class and route filters.</p>
+      </div>
+    </div>
+
+    <!-- ============ PANEL: DQ ============ -->
+    <div class="panel" id="panel-dq">
+      <div class="card">
+        <h2>Cleaning &amp; coverage</h2>
+        <table id="dqTable"></table>
+        <p class="caption">
+          Cleaning policy: dedupe on sample_id/event_id; distance ≤ 0 and fuel blank, below 0 or ≥ 10 L/interval are invalid;
+          blank fuel is never treated as zero; L/100 km uses only intervals where both distance and fuel are valid;
+          events with unknown trip or vehicle mismatch are excluded from vehicle and route rates.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="data.js"></script>
+<script src="chart.umd.min.js"></script>
+<script>
+(function(){
+  const DATA = window.FLEET_DATA;
+  if(!DATA){ document.getElementById("loading").textContent =
+    "data.js not found. Run: python build_data.py"; return; }
+  if(typeof Chart === "undefined"){
+    document.getElementById("loading").textContent =
+      "Chart.js not loaded. For offline use, download chart.umd.min.js next to index.html and change the CDN script tag."; return; }
+
+  Chart.defaults.font.family = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = "#667581";
+
+  const COLORS = {
+    VEH01: "#0369a1",
+    VEH02: "#0d9488",
+    VEH03: "#c2410c",
+    VEH04: "#7c3aed",
+    VEH05: "#78716c",
+    VEH06: "#991b1b",
+    VEH07: "#475569",
+    VEH08: "#94a3b8",
+  };
+  const ATTENTION = new Set(["VEH03", "VEH06"]);
+  const fmt = (n, d=1) => (n==null||isNaN(n)) ? "N/A" : Number(n).toFixed(d);
+
+  const state = {
+    dates: [],
+    d0: 0, d1: 0,
+    routes: new Set(DATA.meta.routes),
+    classes: new Set(DATA.meta.classes),
+    vehicles: new Set(DATA.meta.vehicles.map(v=>v.vehicle_id)),
+  };
+  state.dates = [...new Set(DATA.daily.map(r=>r.date))].sort();
+  state.d0 = 0; state.d1 = state.dates.length - 1;
+
+  const vehicleMeta = Object.fromEntries(DATA.meta.vehicles.map(v=>[v.vehicle_id,v]));
+
+  function buildChips(containerId, values, setRef, onChange){
+    const el = document.getElementById(containerId);
+    el.innerHTML = "";
+    values.forEach(v => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button";
+      b.textContent = v; b.setAttribute("aria-pressed", setRef.has(v));
+      b.onclick = () => {
+        if(setRef.has(v)) setRef.delete(v); else setRef.add(v);
+        b.setAttribute("aria-pressed", setRef.has(v));
+        onChange();
+      };
+      el.appendChild(b);
+    });
+  }
+
+  // Fill summary cards from data — never stale
+  function fillSummary(){
+    // VEH03
+    const v3daily = DATA.daily.filter(r => r.vehicle_id === "VEH03" && r.eng > 0);
+    const v3sorted = v3daily.slice().sort((a,b)=> a.date < b.date ? -1 : 1);
+    const v3vals = v3sorted.map(r => 100 * r.idle / r.eng);
+    const w1 = DATA.weekly.find(r => r.vehicle_id==="VEH03" && r.week==="week 1");
+    const w2 = DATA.weekly.find(r => r.vehicle_id==="VEH03" && r.week==="week 2");
+    if(w2){
+      document.getElementById("kpiV3Value").textContent = fmt(100*w2.idle/w2.eng, 1);
+    }
+    if(w1 && w2){
+      document.getElementById("kpiV3Delta").textContent =
+        `up from ${fmt(100*w1.idle/w1.eng, 1)}% in week 1`;
+    }
+    sparkline(document.getElementById("sparkV3"), v3vals, COLORS.VEH03);
+
+    // VEH06
+    const v6daily = DATA.daily.filter(r => r.vehicle_id === "VEH06" && r.km > 0);
+    const v6sorted = v6daily.slice().sort((a,b)=> a.date < b.date ? -1 : 1);
+    const bench = vehicleMeta["VEH06"].bench;
+    const v6vals = v6sorted.map(r => ((100*r.L/r.km)/bench - 1) * 100);
+    const v5rows = DATA.weekly.filter(r => r.vehicle_id === "VEH05");
+    const v6rows = DATA.weekly.filter(r => r.vehicle_id === "VEH06");
+    if(v5rows.length && v6rows.length){
+      const v5km = v5rows.reduce((a,r)=>a+r.km,0), v5L = v5rows.reduce((a,r)=>a+r.L,0);
+      const v6km = v6rows.reduce((a,r)=>a+r.km,0), v6L = v6rows.reduce((a,r)=>a+r.L,0);
+      const v5r = 100*v5L/v5km, v6r = 100*v6L/v6km;
+      document.getElementById("kpiV6Value").textContent = "+" + fmt((v6r/bench - 1)*100, 1);
+      document.getElementById("kpiV6Delta").textContent =
+        `${fmt(v6r, 1)} vs ${fmt(v5r, 1)} L/100km · peer VEH05`;
+    }
+    sparkline(document.getElementById("sparkV6"), v6vals, COLORS.VEH06);
+  }
+
+  function render(){
+    const from = state.dates[state.d0];
+    const to   = state.dates[state.d1];
+    document.getElementById("dateLabel").textContent = from + "  →  " + to;
+    dateFrom.value = state.d0;
+    dateTo.value   = state.d1;
+
+    const allowedVehicles = DATA.meta.vehicles
+      .filter(v => state.vehicles.has(v.vehicle_id)
+                && state.classes.has(v.vehicle_class)
+                && state.routes.has(DATA.meta.vehicle_route[v.vehicle_id]))
+      .map(v => v.vehicle_id);
+
+    const daily = DATA.daily.filter(r =>
+      r.date >= from && r.date <= to && allowedVehicles.includes(r.vehicle_id));
+
+    const km = daily.reduce((a,r)=>a+r.km,0);
+    const L  = daily.reduce((a,r)=>a+r.L,0);
+    const idle = daily.reduce((a,r)=>a+r.idle,0);
+    const eng  = daily.reduce((a,r)=>a+r.eng,0);
+    const trips = daily.reduce((a,r)=>a+r.trips,0);
+
+    document.getElementById("kpis").innerHTML = [
+      kpi("Trips in view", trips),
+      kpi("Distance used for fuel rate", fmt(km,0)+" km",
+          "Only intervals with valid fuel and positive distance"),
+      kpi("Fuel", fmt(L,0)+" L"),
+      kpi("Fleet L/100 km", km>0 ? fmt(100*L/km,1) : "N/A"),
+      kpi("Idle share", eng>0 ? fmt(100*idle/eng,1)+"%" : "N/A"),
+    ].join("");
+    function kpi(label, value, sub){
+      return `<div class="card"><h2>${label}</h2><div class="kpi">${value}${
+        sub?`<small>${sub}</small>`:""}</div></div>`;
+    }
+
+    const byVD = {};
+    daily.forEach(r => {
+      byVD[r.vehicle_id] = byVD[r.vehicle_id] || {};
+      byVD[r.vehicle_id][r.date] = r;
+    });
+    const inRange = state.dates.slice(state.d0, state.d1+1);
+    const idleSeries = allowedVehicles.map(v => ({
+      label: v, color: COLORS[v],
+      points: inRange.map(d => {
+        const r = byVD[v] && byVD[v][d];
+        return r && r.eng>0 ? {x:d, y:100*r.idle/r.eng} : null;
+      }).filter(Boolean)
+    })).filter(s=>s.points.length);
+    lineChart(document.getElementById("chartIdle"), idleSeries, inRange,
+              "Idle %", { unit: "%", yUnit: "%" });
+
+    const benchSeries = allowedVehicles.map(v => {
+      const rows = daily.filter(r=>r.vehicle_id===v);
+      const k = rows.reduce((a,r)=>a+r.km,0);
+      const l = rows.reduce((a,r)=>a+r.L,0);
+      if(!k || !l) return null;
+      return { label: v, value: (100*l/k)/vehicleMeta[v].bench - 1 };
+    }).filter(Boolean);
+    barChart(document.getElementById("chartBench"), benchSeries,
+             { format: v => (v*100).toFixed(1)+"%",
+               xLabel: "% above class benchmark" });
+
+    const weekly = DATA.weekly.filter(r => allowedVehicles.includes(r.vehicle_id));
+    const vw = {};
+    weekly.forEach(r => { vw[r.vehicle_id] = vw[r.vehicle_id] || {}; vw[r.vehicle_id][r.week] = r; });
+    const wRows = allowedVehicles.map(v => {
+      const a = vw[v] && vw[v]["week 1"];
+      const b = vw[v] && vw[v]["week 2"];
+      return `<tr><td>${v}</td>
+        <td class="num">${a&&a.eng>0?fmt(100*a.idle/a.eng):"N/A"}%</td>
+        <td class="num">${b&&b.eng>0?fmt(100*b.idle/b.eng):"N/A"}%</td>
+        <td class="num">${a&&a.km>0?fmt(100*a.L/a.km):"N/A"}</td>
+        <td class="num">${b&&b.km>0?fmt(100*b.L/b.km):"N/A"}</td></tr>`;
+    }).join("");
+    document.getElementById("weeklyTable").innerHTML =
+      `<thead><tr><th>Vehicle</th>
+        <th class="num">Idle w1</th><th class="num">Idle w2</th>
+        <th class="num">L/100 w1</th><th class="num">L/100 w2</th></tr></thead>
+       <tbody>${wRows}</tbody>`;
+
+    const v3Body  = document.getElementById("v3Body");
+    const v3Empty = document.getElementById("v3Empty");
+    if(allowedVehicles.includes("VEH03")){
+      v3Body.hidden = false; v3Empty.hidden = true;
+
+      const v3daily = DATA.daily.filter(r => r.vehicle_id==="VEH03"
+        && r.date>=from && r.date<=to);
+      const v3dates = [...new Set(v3daily.map(r=>r.date))].sort();
+      lineChart(document.getElementById("v3Chart"),
+                [{ label:"VEH03", color:COLORS.VEH03,
+                   points: v3daily.map(r => r.eng>0 ? {x:r.date, y:100*r.idle/r.eng} : null).filter(Boolean) }],
+                v3dates, "Idle %", { unit: "%", yUnit: "%", fill: true });
+
+      const w1 = DATA.weekly.find(r => r.vehicle_id==="VEH03" && r.week==="week 1");
+      const w2 = DATA.weekly.find(r => r.vehicle_id==="VEH03" && r.week==="week 2");
+      document.getElementById("v3Week").innerHTML =
+        `<thead><tr><th>Week</th><th class="num">Trips</th>
+          <th class="num">Idle %</th><th class="num">L/100 km</th></tr></thead>
+         <tbody>
+           <tr><td>Week 1</td><td class="num">${w1?w1.trips:"N/A"}</td>
+             <td class="num">${w1?fmt(100*w1.idle/w1.eng):"N/A"}%</td>
+             <td class="num">${w1?fmt(100*w1.L/w1.km):"N/A"}</td></tr>
+           <tr><td>Week 2</td><td class="num">${w2?w2.trips:"N/A"}</td>
+             <td class="num">${w2?fmt(100*w2.idle/w2.eng):"N/A"}%</td>
+             <td class="num">${w2?fmt(100*w2.L/w2.km):"N/A"}</td></tr>
+         </tbody>`;
+
+      const week2Drivers = DATA.v3_driver_week;
+      const week2Trips = week2Drivers.reduce((a,r)=>a+r.trips,0);
+      document.getElementById("v3DriversCaption").textContent =
+        `Week 2 covers ${week2Trips} trips across ${week2Drivers.length} different drivers. ` +
+        `Idle share went from ${fmt(100*w1.idle/w1.eng,1)}% in week 1 to ${fmt(100*w2.idle/w2.eng,1)}% in week 2. ` +
+        `The pattern follows the vehicle and the date, not a driver. Equipment, duty and stops are not recorded, so the cause is not determinable from this data.`;
+    } else {
+      v3Body.hidden = true; v3Empty.hidden = false;
+    }
+
+    const v6Body  = document.getElementById("v6Body");
+    const v6Empty = document.getElementById("v6Empty");
+    if(allowedVehicles.includes("VEH06")){
+      v6Body.hidden = false; v6Empty.hidden = true;
+
+      const v6daily = DATA.daily.filter(r => r.vehicle_id==="VEH06"
+        && r.date>=from && r.date<=to && r.km>0);
+      const bench = vehicleMeta["VEH06"].bench;
+      lineChart(document.getElementById("v6Chart"),
+                [{ label:"VEH06", color:COLORS.VEH06,
+                   points: v6daily.map(r => ({x:r.date, y: ((100*r.L/r.km)/bench - 1)*100})) }],
+                v6daily.map(r=>r.date), "% above benchmark",
+                { unit: "%", yUnit: "%", fill: true });
+
+      const rows = DATA.rigid_loadband_wide.map(r => {
+        const gap = r.gap_pct;
+        return `<tr><td>${r.load_band}</td>
+          <td class="num">${fmt(r.VEH05)}</td>
+          <td class="num">${fmt(r.VEH06)}</td>
+          <td class="num">+${fmt(gap,1)}%</td></tr>`;
+      }).join("");
+      document.getElementById("v6Loadband").innerHTML =
+        `<thead><tr><th>Load band</th>
+          <th class="num">VEH05 L/100 km</th>
+          <th class="num">VEH06 L/100 km</th>
+          <th class="num">VEH06 vs VEH05</th></tr></thead>
+         <tbody>${rows}</tbody>`;
+
+      const gaps = DATA.rigid_loadband_wide.map(r=>r.gap_pct);
+      const gapMin = Math.min(...gaps), gapMax = Math.max(...gaps);
+      const v6rows = DATA.weekly.filter(r => r.vehicle_id==="VEH06");
+      const v6km = v6rows.reduce((a,r)=>a+r.km,0);
+      const v6L  = v6rows.reduce((a,r)=>a+r.L,0);
+      const v6pct = ((100*v6L/v6km) / bench - 1) * 100;
+
+      document.getElementById("v6LoadbandCaption").innerHTML =
+        `VEH06 runs <strong>${fmt(v6pct,1)}% above</strong> its illustrative class benchmark overall. ` +
+        `The gap against VEH05 holds in every load band (+${fmt(gapMin,1)}% to +${fmt(gapMax,1)}%), ` +
+        `so load and route mix do not explain it. Vehicle condition and unrecorded route details are the remaining candidates.`;
+    } else {
+      v6Body.hidden = true; v6Empty.hidden = false;
+    }
+
+    const evVeh = DATA.events_by_vehicle
+      .filter(r => allowedVehicles.includes(r.vehicle_id))
+      .sort((a,b)=> (b.per_100km||0) - (a.per_100km||0));
+    const evVRows = evVeh.map(r => `<tr>
+      <td>${r.vehicle_id}</td>
+      <td class="num">${r.harsh_acceleration||0}</td>
+      <td class="num">${r.harsh_braking||0}</td>
+      <td class="num">${r.speeding_signal||0}</td>
+      <td class="num">${r.total||0}</td>
+      <td class="num">${fmt(r.per_100km,1)}</td></tr>`).join("");
+    document.getElementById("evVehicleTable").innerHTML =
+      `<thead><tr><th>Vehicle</th>
+        <th class="num">Harsh accel</th><th class="num">Harsh brake</th>
+        <th class="num">Speeding signal</th><th class="num">Total</th>
+        <th class="num">Per 100 km</th></tr></thead>
+       <tbody>${evVRows}</tbody>`;
+
+    const evR = DATA.events_by_route
+      .filter(r => state.routes.has(r.route_type))
+      .sort((a,b)=> (b.per_100km||0) - (a.per_100km||0));
+    const evRRows = evR.map(r => `<tr>
+      <td>${r.route_type}</td>
+      <td class="num">${fmt(r.km,0)}</td>
+      <td class="num">${r.events}</td>
+      <td class="num">${fmt(r.per_100km,1)}</td></tr>`).join("");
+    document.getElementById("evRouteTable").innerHTML =
+      `<thead><tr><th>Route type</th>
+        <th class="num">Distance (km)</th>
+        <th class="num">Events</th>
+        <th class="num">Per 100 km</th></tr></thead>
+       <tbody>${evRRows}</tbody>`;
+
+    const dq = DATA.dq;
+    const missRows = dq.missing_intervals.map(m =>
+      `<tr><td>${m.trip_id}</td><td>${m.vehicle_id}</td>
+        <td class="num">${m.expected}</td><td class="num">${m.observed}</td>
+        <td class="num">${m.missing}</td></tr>`).join("");
+    const dqRows = [
+      ["Telemetry rows (raw)", dq.telemetry_raw],
+      ["Telemetry rows (after dedupe)", dq.telemetry_clean],
+      ["Duplicate telemetry rows removed", dq.duplicates_removed],
+      ["Invalid distance rows", dq.invalid_distance],
+      ["Invalid fuel rows", dq.invalid_fuel],
+      ["Usable for L/100 km", dq.usable_l100],
+      ["Total valid distance (km)", fmt(dq.km_total,1)],
+      ["Distance with valid fuel (km)", fmt(dq.km_valid,1)],
+      ["Difference (%)", fmt(dq.km_pct_diff,2)],
+      ["Event rows (raw)", dq.events_raw],
+      ["Event rows (after dedupe)", dq.events_clean],
+      ["Event rows linked (usable for rates)", dq.events_linked],
+      ["Events excluded (unknown trip / vehicle mismatch)", dq.events_excluded],
+    ].map(([k,v])=>`<tr><td>${k}</td><td class="num">${v}</td></tr>`).join("");
+    document.getElementById("dqTable").innerHTML =
+      `<thead><tr><th>Check</th><th class="num">Value</th></tr></thead>
+       <tbody>${dqRows}
+         <tr><td colspan="2" style="padding-top:16px;color:#5b6675;font-size:12px;text-transform:uppercase;letter-spacing:.03em">Trips with missing intervals</td></tr>
+         <tr><td colspan="2" style="padding:0"><table>
+           <thead><tr><th>Trip</th><th>Vehicle</th>
+             <th class="num">Expected</th><th class="num">Observed</th><th class="num">Missing</th></tr></thead>
+           <tbody>${missRows}</tbody>
+         </table></td></tr>
+       </tbody>`;
+  }
+
+  function sparkline(canvas, values, color){
+    if(!canvas || !values.length) return;
+    new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: values.map((_,i)=>i),
+        datasets: [{
+          data: values,
+          borderColor: color,
+          backgroundColor: color + "20",
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false, beginAtZero: false }
+        },
+        layout: { padding: 0 },
+        elements: { line: { borderJoinStyle: "round" } }
+      }
+    });
+  }
+
+  function lineChart(el, series, xLabels, yLabel, opts){
+    opts = opts || {};
+    if(el._chart){ el._chart.destroy(); }
+    el.innerHTML = `<div class="chart-wrap"><canvas></canvas></div>`;
+    const ctx = el.querySelector("canvas").getContext("2d");
+    const doFill = opts.fill || series.length === 1;
+
+    const datasets = series.map(s => {
+      const isAttention = ATTENTION.has(s.label);
+      return {
+        label: s.label,
+        data: s.points.map(p => p.y),
+        borderColor: s.color,
+        backgroundColor: s.color + "15",
+        borderWidth: isAttention ? 3 : 1.8,
+        tension: 0.3,
+        pointRadius: isAttention ? 4 : 2.5,
+        pointHoverRadius: 6,
+        pointBackgroundColor: s.color,
+        pointBorderColor: "#fff",
+        pointBorderWidth: 1.5,
+        fill: doFill,
+      };
+    });
+
+    el._chart = new Chart(ctx, {
+      type: "line",
+      data: { labels: xLabels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: {
+            position: "top", align: "start",
+            labels: {
+              boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: "circle",
+              padding: 14, font: { size: 11, weight: "600" }
+            }
+          },
+          tooltip: {
+            backgroundColor: "rgba(20,32,28,.95)",
+            padding: 10,
+            cornerRadius: 6,
+            titleFont: { size: 12, weight: "700" },
+            bodyFont: { size: 12 },
+            displayColors: true,
+            boxWidth: 8, boxHeight: 8, usePointStyle: true,
+            callbacks: {
+              title: items => items[0]?.label || "",
+              label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y, 1)}${opts.unit || ""}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { size: 11 }, color: "#667581",
+              maxRotation: 45, minRotation: 0,
+              callback: function(val, i){
+                const lab = this.getLabelForValue(val);
+                return lab && lab.length >= 10 ? lab.slice(5) : lab;
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "#eef0f4", drawBorder: false },
+            border: { display: false },
+            ticks: {
+              font: { size: 11 }, color: "#667581",
+              callback: v => v + (opts.yUnit || "")
+            },
+            title: {
+              display: !!yLabel, text: yLabel,
+              font: { size: 11, weight: "600" }, color: "#667581"
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function barChart(el, rows, opts){
+    opts = opts || {};
+    if(el._chart){ el._chart.destroy(); }
+    el.innerHTML = `<div class="chart-wrap" style="height:${Math.max(220, rows.length*44)}px"><canvas></canvas></div>`;
+    const ctx = el.querySelector("canvas").getContext("2d");
+
+    el._chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: rows.map(r => r.label),
+        datasets: [{
+          data: rows.map(r => r.value),
+          backgroundColor: rows.map(r => COLORS[r.label] || "#888"),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(20,32,28,.95)",
+            padding: 10, cornerRadius: 6,
+            titleFont: { size: 12, weight: "700" },
+            bodyFont: { size: 12 },
+            displayColors: false,
+            callbacks: {
+              label: ctx => opts.format ? opts.format(ctx.parsed.x) : ctx.parsed.x
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: "#eef0f4", drawBorder: false },
+            border: { display: false },
+            ticks: {
+              font: { size: 11 }, color: "#667581",
+              callback: v => opts.format ? opts.format(v) : v
+            },
+            title: {
+              display: !!opts.xLabel, text: opts.xLabel,
+              font: { size: 11, weight: "600" }, color: "#667581"
+            }
+          },
+          y: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { size: 11, weight: "600" }, color: "#1c2431" }
+          }
+        }
+      }
+    });
+  }
+
+  // --- date dropdowns (populated from DATA.daily dates) ---
+  const dateFrom = document.getElementById("dateFrom");
+  const dateTo   = document.getElementById("dateTo");
+  state.dates.forEach((d, i) => {
+    dateFrom.appendChild(new Option(d, i));
+    dateTo.appendChild(new Option(d, i));
+  });
+  dateFrom.value = state.d0;
+  dateTo.value   = state.d1;
+  dateFrom.onchange = () => {
+    state.d0 = +dateFrom.value;
+    if(state.d0 > state.d1){ state.d1 = state.d0; dateTo.value = state.d1; }
+    render();
+  };
+  dateTo.onchange = () => {
+    state.d1 = +dateTo.value;
+    if(state.d1 < state.d0){ state.d0 = state.d1; dateFrom.value = state.d0; }
+    render();
+  };
+
+  document.getElementById("tabs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected", x===b));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    document.getElementById("panel-"+b.dataset.tab).classList.add("active");
+  });
+
+  buildChips("routeChips", DATA.meta.routes, state.routes, render);
+  buildChips("classChips", DATA.meta.classes, state.classes, render);
+  buildChips("vehicleChips", DATA.meta.vehicles.map(v=>v.vehicle_id), state.vehicles, render);
+
+  fillSummary();
+  document.getElementById("loading").hidden = true;
+  document.getElementById("app").hidden = false;
+  render();
+})();
+</script>
+</body>
+</html>
