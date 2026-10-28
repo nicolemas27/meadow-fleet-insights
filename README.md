@@ -1,4 +1,4 @@
-# Meadow Distribution — Fleet Insights Prototype
+# Meadow Distribution (Fleet Insights Prototype)
 
 A small customer-facing proof of concept for Meadow Distribution's fleet manager. 
 Synthetic data, 5–16 October 2026, 8 diesel vehicles.
@@ -6,7 +6,7 @@ Synthetic data, 5–16 October 2026, 8 diesel vehicles.
 ## How to Run It
 
 Double-click `index.html`. It opens in any modern browser. 
-It works completely offline (no internet required).
+It works completely offline.
 
 ## The Two Findings
 
